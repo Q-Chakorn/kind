@@ -120,16 +120,26 @@ kubectl run test-pod --image=busybox --restart=Never --rm -i --tty -- \
   nslookup kubernetes.default.svc.cluster.local
 
 # ทดสอบการเชื่อมต่อระหว่าง pods
-kubectl run ping-test --image=busybox --restart=Never --rm -i --tty -- \
-  ping <pod-ip>
+kubectl run ping-test --image=busybox:1.35 --restart=Never --rm -i --tty -- sh -c "
+echo 'Testing inter-pod connectivity:'
+echo
+for pod_ip in <pod_ip> <pod_ip> <pod_ip> <pod_ip>; do
+  echo \"Pinging \$pod_ip:\"
+  ping -c 2 \$pod_ip
+  echo
+done"
 ```
 
 ### ทดสอบ Load Balancing
 
 ```bash
 # ทดสอบการกระจาย load ของ service
-kubectl run test-client --image=curlimages/curl --restart=Never --rm -i --tty -- \
-  sh -c "for i in \$(seq 1 8); do curl -s test-nginx-service | grep Node; done"
+kubectl run test-client --image=curlimages/curl:8.4.0 --restart=Never --rm -i --tty -- sh -c "
+for i in \$(seq 1 8); do
+  echo '=== Request \$i ==='
+  curl -s test-nginx-service | grep -E '(Node|Pod IP|Hostname)'
+  echo
+done"
 ```
 
 ## 📊 ผลการทดสอบ
