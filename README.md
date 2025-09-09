@@ -251,6 +251,5 @@ kind delete cluster --name master
 
 ---
 
-**สร้างเมื่อ:** กันยายน 2025  
 **ทดสอบบน:** macOS พร้อม Docker Desktop  
 **Kubernetes Version:** v1.34.0
