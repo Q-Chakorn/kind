@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-nginx
+  labels:
+    app: test-nginx
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: test-nginx
+  template:
+    metadata:
+      labels:
+        app: test-nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.25
+        ports:
+        - containerPort: 80
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        volumeMounts:
+        - name: html
+          mountPath: /usr/share/nginx/html
+      initContainers:
+      - name: setup-html
+        image: busybox:1.35
+        command:
+        - sh
+        - -c
+        - |
+          cat > /html/index.html << EOF
+          <!DOCTYPE html>
+          <html>
+          <head><title>Node Test</title></head>
+          <body>
+          <h1>Hello from Pod</h1>
+          <p><strong>Node:</strong> $(NODE_NAME)</p>
+          <p><strong>Pod IP:</strong> $(POD_IP)</p>
+          <p><strong>Hostname:</strong> $(hostname)</p>
+          <p><strong>Time:</strong> $(date)</p>
+          </body>
+          </html>
+          EOF
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        volumeMounts:
+        - name: html
+          mountPath: /html
+      volumes:
+      - name: html
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: test-nginx-service
+spec:
+  selector:
+    app: test-nginx
+  ports:
+  - port: 80
+    targetPort: 80
+  type: ClusterIP

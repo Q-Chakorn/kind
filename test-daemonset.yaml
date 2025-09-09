@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: node-info-daemon
+  labels:
+    app: node-info
+spec:
+  selector:
+    matchLabels:
+      app: node-info
+  template:
+    metadata:
+      labels:
+        app: node-info
+    spec:
+      containers:
+      - name: node-info
+        image: busybox:1.35
+        command:
+        - sh
+        - -c
+        - |
+          while true; do
+            echo "Node: $NODE_NAME - Pod: $HOSTNAME - IP: $POD_IP - $(date)"
+            sleep 30
+          done
+        env:
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: HOSTNAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+      tolerations:
+      - key: node-role.kubernetes.io/control-plane
+        effect: NoSchedule
